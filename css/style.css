@@ -39,7 +39,7 @@
 	display: inline-block;
 	position: relative;
 	z-index: 2;
-	top: -1px;
+	/* top: -1px; */
 	color: #80a6cd;
 }
 .tree .tree-folder .tree-folder-header .tree-folder-name {
