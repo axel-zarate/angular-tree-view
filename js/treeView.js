@@ -225,7 +225,7 @@
 					var template =
 						'<div class="tree-folder" ng-repeat="node in ' + attrs.treeViewNode + '.' + foldersProperty + '">' +
 							'<div class="tree-folder-header inline" ng-click="selectNode()" ng-class="{ selected: node.selected }">' +
-								'<i class="icon-folder-close light-blue" ng-class="getIconClass()"></i> ' +
+								'<i class="icon-folder-close" ng-class="getIconClass()"></i> ' +
 								'<div class="tree-folder-name">{{ node.' + displayProperty + ' }}</div> ' +
 							'</div>' +
 							'<div class="tree-folder-content"'+ (collapsible ? ' ng-show="expanded"' : '') + '>' +
@@ -234,7 +234,7 @@
 							'</div>' +
 						'</div>' +
 						'<div class="tree-item" ng-repeat="file in node.' + filesProperty + '" ng-click="selectFile(file)" ng-class="{ selected: file.selected }">' +
-							'<div class="tree-item-name"><i class="icon-picture green"></i> {{ file.' + displayProperty + ' }}</div>' +
+							'<div class="tree-item-name"><i class="icon-file"></i> {{ file.' + displayProperty + ' }}</div>' +
 						'</div>';
 
 					//Rendering template.

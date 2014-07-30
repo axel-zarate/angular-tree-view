@@ -1,4 +1,3 @@
-angular-tree-view
-=================
+# AngularJS Tree View Directive
 
-Tree view control for AngularJS and Bootstrap
+Tree view control for AngularJS and Bootstrap.
