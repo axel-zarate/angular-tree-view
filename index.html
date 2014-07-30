@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Angular Tree View</title>
+
+		<meta name="description" content="overview &amp; stats" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css" />
+		<!--[if IE 7]>
+		  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome-ie7.min.css" />
+		<![endif]-->
+		
+		<link rel="stylesheet" href="css/style.css" />
+
+	</head>
+
+	<body ng-app="Demo">
+		<div class="container" ng-controller="DemoController">
+			<h1>Tree View Example</h1>
+			<div class="row">
+				<div class="span6 offset3">
+					<div style="padding: 10px; border: 1px solid #aaa;">
+						<ul class="breadcrumb">
+							<li ng-repeat="b in breadcrums" ng-class="{ active: $last }">{{ b }} <span class="divider" ng-show="!$last">/</span></li>
+						</ul>
+						<div>Root</div>
+						<div tree-view="structure" tree-view-options="options"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!--[if !IE]> -->
+		<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+		<!-- <![endif]-->
+		<!--[if IE]>
+		<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+		<![endif]-->
+		<script src="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/js/bootstrap.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.21/angular.min.js"></script>
+		<script src="js/treeView.js"></script>
+		<script>
+			(function () {
+				var app = angular.module('Demo', ['AxelSoft']);
+				
+				app.controller('DemoController', ['$scope', function ($scope) {
+					
+					$scope.breadcrums = [''];
+					
+					$scope.structure = { folders: [
+						{ name: 'Folder 1', files: [{ name: 'File 1.jpg' }], folders: [
+							{ name: 'Subfolder 1', files: [{ name: 'Subfile 1' }] },
+							{ name: 'Subfolder 2' },
+							{ name: 'Subfolder 3' }
+						] }
+					]};
+					
+					$scope.options = {
+						onNodeSelect: function (node, breadcrums) {
+							$scope.breadcrums = breadcrums;
+						}
+					};
+				}]);
+				
+			})();
+		</script>
+	</body>
+</html>
