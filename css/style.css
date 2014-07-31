@@ -19,15 +19,19 @@
 .tree .tree-folder {
 	width: auto;
 	min-height: 20px;
-	cursor: pointer;
 }
 .tree .tree-folder .tree-folder-header {
 	position: relative;
 	height: 20px;
 	line-height: 20px;
+	cursor: pointer;
 }
-.tree .tree-folder .tree-folder-header:hover {
+.tree .tree-folder .tree-folder-header:hover,
+.tree .tree-folder .tree-folder-header:focus,
+.tree .tree-item:hover,
+.tree .tree-item:focus {
 	background-color: #F0F7FC;
+	outline: none;
 }
 .tree .tree-folder .tree-folder-header .tree-folder-name,
 .tree .tree-item .tree-item-name {
@@ -77,9 +81,6 @@
 	line-height: 20px;
 	cursor: pointer;
 }
-.tree .tree-item:hover {
-	background-color: #F0F7FC;
-}
 .tree .tree-item .tree-item-name {
 	margin-left: 3px;
 }
@@ -120,12 +121,21 @@
 	padding: 5px 3px;
 	color: #4D6878;
 	border: 1px solid #FFF;
+	display: block;
+	text-decoration: none;
 }
 .tree .tree-item.selected,
 .tree .tree-folder .tree-folder-header.selected {
-	border: 1px solid #62a8d1;
+	border-color: #62a8d1;
 	background-color: #F0F7FC;
 }
+.tree .tree-item:hover,
+.tree .tree-item.selected:focus,
+.tree .tree-folder .tree-folder-header:hover,
+.tree .tree-folder .tree-folder-header:focus {
+	text-decoration: none;
+}
+
 .tree .tree-item > [class*="icon-"]:first-child {
 	/* color: #F9E8CE; */
 	color: #80a6cd;
@@ -254,21 +264,7 @@
 .tree-view2 {
 	display: inline-block;
 }
-.rootFolder {
-	padding: 5px;
-	height: 20px;
-	line-height: 20px;
-}
-.rootFolder:hover {
-	background-color: #F0F7FC;
-}
-.rootFolder.selected, .rootFolder.selected:hover {
-	background-color: #62a8d1;
-	color: #fff;
-}
-.rootFolder span {
-	cursor: pointer;
-}
+
 .tree-folder-header.editing {
 	background-color: #f0f7fc !important;
 }

@@ -123,7 +123,8 @@
 					return !(scope.hasChildren());
 				};
 
-				scope.selectNode = function () {
+				scope.selectNode = function (event) {
+					event.preventDefault();
 					if (isEditing) return;
 
 					if (collapsible) {
@@ -139,7 +140,8 @@
 					controller.selectNode(scope.node, breadcrumbs.reverse());
 				};
 
-				scope.selectFile = function (file) {
+				scope.selectFile = function (file, event) {
+					event.preventDefault();
 					if (isEditing) return;
 
 					var breadcrumbs = [file[displayProperty]];
@@ -224,18 +226,18 @@
 				function render() {
 					var template =
 						'<div class="tree-folder" ng-repeat="node in ' + attrs.treeViewNode + '.' + foldersProperty + '">' +
-							'<div class="tree-folder-header inline" ng-click="selectNode()" ng-class="{ selected: node.selected }">' +
+							'<a href="#" class="tree-folder-header inline" ng-click="selectNode($event)" ng-class="{ selected: node.selected }">' +
 								'<i class="icon-folder-close" ng-class="getIconClass()"></i> ' +
-								'<div class="tree-folder-name">{{ node.' + displayProperty + ' }}</div> ' +
-							'</div>' +
+								'<span class="tree-folder-name">{{ node.' + displayProperty + ' }}</span> ' +
+							'</a>' +
 							'<div class="tree-folder-content"'+ (collapsible ? ' ng-show="expanded"' : '') + '>' +
 								'<div tree-view-node="node" tree-view-node-collapsible="' + collapsible + '">' +
 								'</div>' +
 							'</div>' +
 						'</div>' +
-						'<div class="tree-item" ng-repeat="file in node.' + filesProperty + '" ng-click="selectFile(file)" ng-class="{ selected: file.selected }">' +
-							'<div class="tree-item-name"><i class="icon-file"></i> {{ file.' + displayProperty + ' }}</div>' +
-						'</div>';
+						'<a href="#" class="tree-item" ng-repeat="file in node.' + filesProperty + '" ng-click="selectFile(file, $event)" ng-class="{ selected: file.selected }">' +
+							'<span class="tree-item-name"><i class="icon-file"></i> {{ file.' + displayProperty + ' }}</span>' +
+						'</a>';
 
 					//Rendering template.
 					element.html('').append($compile(template)(scope));
