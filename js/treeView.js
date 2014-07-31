@@ -24,8 +24,7 @@
 			controller: ['$scope', function ($scope) {
 				var self = this,
 					selectedNode,
-					selectedFile,
-				    editingNode;
+					selectedFile;
 
 				var options = angular.extend({}, treeViewDefaults, $scope.treeViewOptions);
 
@@ -66,6 +65,7 @@
 						options.onAddNode(event, name, parent);
 					}
 				};
+				/*
 				self.removeNode = function (node, index, parent) {
 					if (typeof options.onRemoveNode === "function") {
 						options.onRemoveNode(node, index, parent);
@@ -78,7 +78,7 @@
 					}
 					return true;
 				};
-				
+				*/
 				self.getOptions = function () {
 					return options;
 				};
@@ -97,35 +97,27 @@
 					foldersProperty = options.foldersProperty,
 					filesProperty = options.filesProperty,
 					displayProperty = options.displayProperty,
-					collapsible = options.collapsible,
-					isEditing = false;
+					collapsible = options.collapsible;
+				//var isEditing = false;
 
-				scope.newNodeName = '';
-				scope.addErrorMessage = '';
 				scope.expanded = collapsible == false;
-				scope.editName = '';
-				scope.editErrorMessage = '';
+				//scope.newNodeName = '';
+				//scope.addErrorMessage = '';
+				//scope.editName = '';
+				//scope.editErrorMessage = '';
 
 				scope.getIconClass = function () {
 					return 'icon-folder' + (scope.expanded && scope.hasChildren() ? '-open' : '');
 				};
-
-				scope.isEditing = function () {
-					return isEditing;
-				};
-
+				
 				scope.hasChildren = function () {
 					var node = scope.node;
 					return Boolean(node && (node[foldersProperty] && node[foldersProperty].length) || (node[filesProperty] && node[filesProperty].length));
 				};
 
-				scope.canRemove = function () {
-					return !(scope.hasChildren());
-				};
-
 				scope.selectNode = function (event) {
 					event.preventDefault();
-					if (isEditing) return;
+					//if (isEditing) return;
 
 					if (collapsible) {
 						toggleExpanded();
@@ -142,7 +134,7 @@
 
 				scope.selectFile = function (file, event) {
 					event.preventDefault();
-					if (isEditing) return;
+					//if (isEditing) return;
 
 					var breadcrumbs = [file[displayProperty]];
 					var nodeScope = scope;
@@ -153,6 +145,7 @@
 					controller.selectFile(file, breadcrumbs.reverse());
 				};
 
+				/*
 				scope.addNode = function () {
 					var addEvent = {
 						commit: function (error) {
@@ -168,7 +161,15 @@
 
 					controller.addNode(addEvent, scope.newNodeName, scope.node);
 				};
+				
+				scope.isEditing = function () {
+					return isEditing;
+				};
 
+				scope.canRemove = function () {
+					return !(scope.hasChildren());
+				};
+				
 				scope.remove = function (event, index) {
 					event.stopPropagation();
 					controller.removeNode(scope.node, index, scope.$parent.node);
@@ -217,6 +218,7 @@
 					scope.editErrorMessage = '';
 					controller.editingScope = undefined;
 				};
+				*/
 
 				function toggleExpanded() {
 					//if (!scope.hasChildren()) return;
