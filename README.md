@@ -10,7 +10,7 @@ In your HTML:
 <div tree-view="structure" tree-view-options="options"></div>
 ```
 
-Where structure is the JSON model containing the folders and files, and options is the tree view configuration. If you don’t provide any, the default configuration is used.
+Where `structure` is the JSON model containing the folders and files, and `options` is the tree view configuration. If you don't provide any, the default configuration is used.
 
 Example model and configuration:
 
