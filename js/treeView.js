@@ -8,7 +8,7 @@
 		collapsible: true
 	});
 	
-	module.directive('treeView', ['treeViewDefaults', function (treeViewDefaults) {
+	module.directive('treeView', ['$q', 'treeViewDefaults', function ($q, treeViewDefaults) {
 		return {
 			restrict: 'A',
 			scope: {
@@ -29,15 +29,10 @@
 				var options = angular.extend({}, treeViewDefaults, $scope.treeViewOptions);
 
 				self.selectNode = function (node, breadcrumbs) {
-					if (selectedNode) {
-						selectedNode.selected = false;
-					}
 					if (selectedFile) {
-						selectedFile.selected = false;
 						selectedFile = undefined;
 					}
 					selectedNode = node;
-					selectedNode.selected = true;
 
 					if (typeof options.onNodeSelect === "function") {
 						options.onNodeSelect(node, breadcrumbs);
@@ -46,26 +41,25 @@
 
 				self.selectFile = function (file, breadcrumbs) {
 					if (selectedNode) {
-						selectedNode.selected = false;
 						selectedNode = undefined;
 					}
-					if (selectedFile) {
-						selectedFile.selected = false;
-					}
 					selectedFile = file;
-					selectedFile.selected = true;
 
 					if (typeof options.onNodeSelect === "function") {
 						options.onNodeSelect(file, breadcrumbs);
 					}
 				};
+				
+				self.isSelected = function (node) {
+					return node === selectedNode || node === selectedFile;
+				};
 
+				/*
 				self.addNode = function (event, name, parent) {
 					if (typeof options.onAddNode === "function") {
 						options.onAddNode(event, name, parent);
 					}
 				};
-				/*
 				self.removeNode = function (node, index, parent) {
 					if (typeof options.onRemoveNode === "function") {
 						options.onRemoveNode(node, index, parent);
@@ -86,12 +80,11 @@
 		};
 	}]);
 
-	module.directive('treeViewNode', ['$compile', function ($compile) {
+	module.directive('treeViewNode', ['$q', '$compile', function ($q, $compile) {
 		return {
 			restrict: 'A',
 			require: '^treeView',
 			link: function (scope, element, attrs, controller) {
-				//scope.$watch(attrs.treeViewNode, render);
 
 				var options = controller.getOptions(),
 					foldersProperty = options.foldersProperty,
@@ -106,9 +99,15 @@
 				//scope.editName = '';
 				//scope.editErrorMessage = '';
 
-				scope.getIconClass = function () {
+				scope.getFolderIconClass = function () {
 					return 'icon-folder' + (scope.expanded && scope.hasChildren() ? '-open' : '');
 				};
+				
+				scope.getFileIconClass = typeof options.mapIcon === 'function' 
+					? options.mapIcon
+					: function (file) {
+						return 'icon-file';
+					};
 				
 				scope.hasChildren = function () {
 					var node = scope.node;
@@ -143,6 +142,10 @@
 						nodeScope = nodeScope.$parent;
 					}
 					controller.selectFile(file, breadcrumbs.reverse());
+				};
+				
+				scope.isSelected = function (node) {
+					return controller.isSelected(node);
 				};
 
 				/*
@@ -228,17 +231,17 @@
 				function render() {
 					var template =
 						'<div class="tree-folder" ng-repeat="node in ' + attrs.treeViewNode + '.' + foldersProperty + '">' +
-							'<a href="#" class="tree-folder-header inline" ng-click="selectNode($event)" ng-class="{ selected: node.selected }">' +
-								'<i class="icon-folder-close" ng-class="getIconClass()"></i> ' +
+							'<a href="#" class="tree-folder-header inline" ng-click="selectNode($event)" ng-class="{ selected: isSelected(node) }">' +
+								'<i class="icon-folder-close" ng-class="getFolderIconClass()"></i> ' +
 								'<span class="tree-folder-name">{{ node.' + displayProperty + ' }}</span> ' +
 							'</a>' +
 							'<div class="tree-folder-content"'+ (collapsible ? ' ng-show="expanded"' : '') + '>' +
-								'<div tree-view-node="node" tree-view-node-collapsible="' + collapsible + '">' +
+								'<div tree-view-node="node">' +
 								'</div>' +
 							'</div>' +
 						'</div>' +
-						'<a href="#" class="tree-item" ng-repeat="file in node.' + filesProperty + '" ng-click="selectFile(file, $event)" ng-class="{ selected: file.selected }">' +
-							'<span class="tree-item-name"><i class="icon-file"></i> {{ file.' + displayProperty + ' }}</span>' +
+						'<a href="#" class="tree-item" ng-repeat="file in node.' + filesProperty + '" ng-click="selectFile(file, $event)" ng-class="{ selected: isSelected(file) }">' +
+							'<span class="tree-item-name"><i ng-class="getFileIconClass(file)"></i> {{ file.' + displayProperty + ' }}</span>' +
 						'</a>';
 
 					//Rendering template.
