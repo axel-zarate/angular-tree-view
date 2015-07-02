@@ -78,7 +78,7 @@
 							{ name: 'Subfolder 3' }
 						]},
 						{ name: 'Folder 2' }
-					]};
+					], files: [{ name: 'File 1.gif' }, { name: 'File 2.gif' }]};
 					
 					$scope.options = {
 						onNodeSelect: function (node, breadcrums) {
@@ -93,7 +93,8 @@
 					var iconClassMap = {
 						txt: 'icon-file-text',
 						jpg: 'icon-picture blue',
-						png: 'icon-picture orange'
+						png: 'icon-picture orange',
+						gif: 'icon-picture'
 					},
 						defaultIconClass = 'icon-file';
 					
