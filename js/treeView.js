@@ -8,7 +8,7 @@
 		collapsible: true
 	});
 	
-	module.directive('treeView', ['$q', 'treeViewDefaults', function ($q, treeViewDefaults) {
+	module.directive('treeView', ['treeViewDefaults', function (treeViewDefaults) {
 		return {
 			restrict: 'A',
 			scope: {
@@ -17,33 +17,52 @@
 			},
 			replace: true,
 			template:
-				'<div class="tree">' +
-					'<div tree-view-node="treeView">' +
+				'<div class="tree-wrap">' +
+					'<ul class="inline tree-actions" ng-show="showActions">' +
+						'<li><a href="#" ng-click="add($event)" ng-show="canAdd" ng-disabled="!isFolderSelected"><i class="icon-plus"></i></a></li>' +
+						'<li><a href="#" ng-click="remove($event)" ng-show="canRemove" ng-disabled="!hasSelection"><i class="icon-remove"></i></a></li>' +
+						'<li><a href="#" ng-click="edit($event)" ng-show="canEdit" ng-disabled="!hasSelection"><i class="icon-pencil"></i></a></li>' +
+					'</ul>' +
+					'<div class="tree">' +
+						'<div tree-view-node="treeView">' +
+						'</div>' +
 					'</div>' +
 				'</div>',
 			controller: ['$scope', function ($scope) {
 				var self = this,
-					selectedNode,
-					selectedFile;
+					selectedScope,
+					selectedFolder,
+					selectedFile,
+					editingScope;
 
 				var options = angular.extend({}, treeViewDefaults, $scope.treeViewOptions);
 
-				self.selectNode = function (node, breadcrumbs) {
+				self.selectFolder = function (scope, node, breadcrumbs) {
+					if (editingScope) return;
+					
 					if (selectedFile) {
 						selectedFile = undefined;
 					}
-					selectedNode = node;
+					selectedScope = scope;
+					selectedFolder = node;
+					$scope.hasSelection = true;
+					$scope.isFolderSelected = true;
 
 					if (typeof options.onNodeSelect === "function") {
 						options.onNodeSelect(node, breadcrumbs);
 					}
 				};
 
-				self.selectFile = function (file, breadcrumbs) {
-					if (selectedNode) {
-						selectedNode = undefined;
+				self.selectFile = function (scope, file, breadcrumbs) {
+					if (editingScope) return;
+					
+					if (selectedFolder) {
+						selectedFolder = undefined;
 					}
+					selectedScope = scope;
 					selectedFile = file;
+					$scope.hasSelection = true;
+					$scope.isFolderSelected = false;
 
 					if (typeof options.onNodeSelect === "function") {
 						options.onNodeSelect(file, breadcrumbs);
@@ -51,36 +70,62 @@
 				};
 				
 				self.isSelected = function (node) {
-					return node === selectedNode || node === selectedFile;
+					return node === selectedFolder || node === selectedFile;
 				};
 
-				/*
-				self.addNode = function (event, name, parent) {
-					if (typeof options.onAddNode === "function") {
-						options.onAddNode(event, name, parent);
-					}
-				};
-				self.removeNode = function (node, index, parent) {
-					if (typeof options.onRemoveNode === "function") {
-						options.onRemoveNode(node, index, parent);
-					}
-				};
-				
-				self.renameNode = function (event, node, name) {
-					if (typeof options.onRenameNode === "function") {
-						return options.onRenameNode(event, node, name);
-					}
-					return true;
-				};
-				*/
 				self.getOptions = function () {
 					return options;
 				};
+
+				self.isEditable = function () {
+					return editable;
+				};
+
+				self.cancelEdit = function() {
+					editingScope = undefined;
+					$scope.showActions = true;
+				};
+
+				self.endEdit = function() {
+					self.cancelEdit();
+				};
+				
+				$scope.add = function (event) {
+					event.preventDefault();
+
+					if (!$scope.isFolderSelected) return;
+					
+					options.onAdd(selectedFolder);
+				};
+
+				$scope.remove = function (event) {
+					event.preventDefault();
+
+					if (!$scope.hasSelection) return;
+
+					options.onRemove(selectedFile || selectedFolder);
+				};
+
+				$scope.edit = function (event) {
+					event.preventDefault();
+
+					if (!$scope.hasSelection) return;
+
+					$scope.showActions = false;
+					editingScope = selectedScope;
+					editingScope.beginEdit();
+				};
+
+				$scope.canAdd = typeof options.onAdd === "function";
+				$scope.canEdit = typeof options.onEdit === "function";
+				$scope.canRemove = typeof options.onRemove === "function";
+				var editable = $scope.canAdd || $scope.canEdit || $scope.canRemove;
+				$scope.showActions = editable;
 			}]
 		};
 	}]);
 
-	module.directive('treeViewNode', ['$q', '$compile', function ($q, $compile) {
+	module.directive('treeViewNode', ['$compile', function ($compile) {
 		return {
 			restrict: 'A',
 			require: '^treeView',
@@ -90,34 +135,37 @@
 					foldersProperty = options.foldersProperty,
 					filesProperty = options.filesProperty,
 					displayProperty = options.displayProperty,
-					collapsible = options.collapsible;
-				//var isEditing = false;
+					collapsible = options.collapsible,
+					editable = controller.isEditable();
+
+				var isEditing = false;
 
 				scope.expanded = collapsible == false;
-				//scope.newNodeName = '';
-				//scope.addErrorMessage = '';
-				//scope.editName = '';
-				//scope.editErrorMessage = '';
+
+				scope.isEditing = function () {
+					return isEditing;
+				};
 
 				scope.getFolderIconClass = function () {
 					return 'icon-folder' + (scope.expanded && scope.hasChildren() ? '-open' : '');
 				};
-				
+
 				scope.getFileIconClass = typeof options.mapIcon === 'function' 
 					? options.mapIcon
 					: function (file) {
 						return 'icon-file';
 					};
-				
+
 				scope.hasChildren = function () {
 					var node = scope.node;
 					return Boolean(node && (node[foldersProperty] && node[foldersProperty].length) || (node[filesProperty] && node[filesProperty].length));
 				};
 
-				scope.selectNode = function (event) {
+				scope.selectFolder = function (event) {
 					event.preventDefault();
-					//if (isEditing) return;
 
+					if (isEditing) return;
+					
 					if (collapsible) {
 						toggleExpanded();
 					}
@@ -128,112 +176,67 @@
 						breadcrumbs.push(nodeScope.node[displayProperty]);
 						nodeScope = nodeScope.$parent;
 					}
-					controller.selectNode(scope.node, breadcrumbs.reverse());
+					controller.selectFolder(scope, scope.node, breadcrumbs.reverse());
 				};
 
 				scope.selectFile = function (file, event) {
 					event.preventDefault();
-					//if (isEditing) return;
 
+					if (isEditing) return;
+					
 					var breadcrumbs = [file[displayProperty]];
 					var nodeScope = scope;
 					while (nodeScope.node) {
 						breadcrumbs.push(nodeScope.node[displayProperty]);
 						nodeScope = nodeScope.$parent;
 					}
-					controller.selectFile(file, breadcrumbs.reverse());
+					controller.selectFile(scope, file, breadcrumbs.reverse());
 				};
 				
 				scope.isSelected = function (node) {
 					return controller.isSelected(node);
 				};
 
-				/*
-				scope.addNode = function () {
-					var addEvent = {
-						commit: function (error) {
-							if (error) {
-								scope.addErrorMessage = error;
-							}
-							else {
-								scope.newNodeName = '';
-								scope.addErrorMessage = '';
-							}
-						}
-					};
-
-					controller.addNode(addEvent, scope.newNodeName, scope.node);
-				};
-				
-				scope.isEditing = function () {
-					return isEditing;
-				};
-
-				scope.canRemove = function () {
-					return !(scope.hasChildren());
-				};
-				
-				scope.remove = function (event, index) {
-					event.stopPropagation();
-					controller.removeNode(scope.node, index, scope.$parent.node);
-				};
-
-				scope.edit = function (event) {
-				    isEditing = true;
-				    controller.editingScope = scope;
-					//expanded = false;
+				scope.beginEdit = function () {
+					isEditing = true;
+					
 					scope.editName = scope.node[displayProperty];
+				};
+
+				scope.endEdit = function (event) {
+					event.preventDefault();
 					event.stopPropagation();
-				};
-
-				scope.canEdit = function () {
-				    return !controller.editingScope || scope == controller.editingScope;
-				};
-
-				scope.canAdd = function () {
-				    return !isEditing && scope.canEdit();
-				};
-
-				scope.rename = function (event) {
-					event.stopPropagation();
-
-					var renameEvent = {
-						commit: function (error) {
-							if (error) {
-								scope.editErrorMessage = error;
-							}
-							else {
-								scope.cancelEdit();
-							}
-						}
-					};
-
-					controller.renameNode(renameEvent, scope.node, scope.editName);
+					isEditing = false;
+					
+					options.onEdit(scope.node, scope.editName);
+					controller.endEdit();
 				};
 
 				scope.cancelEdit = function (event) {
-					if (event) {
-						event.stopPropagation();
-					}
-
+					event.preventDefault();
+					event.stopPropagation();
 					isEditing = false;
-					scope.editName = '';
-					scope.editErrorMessage = '';
-					controller.editingScope = undefined;
+					controller.cancelEdit();
 				};
-				*/
 
 				function toggleExpanded() {
-					//if (!scope.hasChildren()) return;
 					scope.expanded = !scope.expanded;
 				}
 
 				function render() {
 					var template =
 						'<div class="tree-folder" ng-repeat="node in ' + attrs.treeViewNode + '.' + foldersProperty + '">' +
-							'<a href="#" class="tree-folder-header inline" ng-click="selectNode($event)" ng-class="{ selected: isSelected(node) }">' +
+							'<a href="#" class="tree-folder-header inline" ng-click="selectFolder($event)" ng-class="{ selected: isSelected(node)' + (editable ? ', editing: isEditing()' : '') + ' }">' +
 								'<i class="icon-folder-close" ng-class="getFolderIconClass()"></i> ' +
-								'<span class="tree-folder-name">{{ node.' + displayProperty + ' }}</span> ' +
+								'<span class="tree-folder-name"' + (editable ? ' ng-hide="isEditing()"' : '') + '>{{ node.' + displayProperty + ' }}</span> ' +
+								(editable ?
+								'<span class="edit-pane" ng-show="isEditing()">' +
+									'<input type="text" class="input-large edit" ui-keyup="{ enter: \'endEdit($event)\', esc: \'cancelEdit($event)\' }" ng-model="editName" maxlength="60" />' +
+									'<span ng-click="endEdit($event)" title="Save"><i class="icon-ok green"></i></span>' +
+									'<span ng-click="cancelEdit($event)" title="Cancel"><i class="icon-remove red"></i></span>' +
+									'<span class="error-message red help-inline">{{ editErrorMessage }}</span>' +
+								'</span>'
+									: '') +
 							'</a>' +
 							'<div class="tree-folder-content"'+ (collapsible ? ' ng-show="expanded"' : '') + '>' +
 								'<div tree-view-node="node">' +
@@ -252,4 +255,90 @@
 			}
 		};
 	}]);
+
+	module.directive('treeViewFile', ['$compile', function ($compile) {
+		return {
+			restrict: 'A',
+			require: '^treeView',
+			link: function (scope, element, attrs, controller) {
+				var options = controller.getOptions(),
+					filesProperty = options.filesProperty,
+					displayProperty = options.displayProperty,
+					editable = controller.isEditable();
+
+				var isEditing = false;
+
+				scope.isEditing = function () {
+					return isEditing;
+				};
+
+				scope.getFileIconClass = typeof options.mapIcon === 'function' 
+					? options.mapIcon
+					: function (file) {
+						return 'icon-file';
+					};
+
+				scope.selectFile = function (file, event) {
+					event.preventDefault();
+
+					if (isEditing) return;
+					
+					var breadcrumbs = [file[displayProperty]];
+					var nodeScope = scope;
+					while (nodeScope.node) {
+						breadcrumbs.push(nodeScope.node[displayProperty]);
+						nodeScope = nodeScope.$parent;
+					}
+					controller.selectFile(scope, file, breadcrumbs.reverse());
+				};
+				
+				scope.isSelected = function (node) {
+					return controller.isSelected(node);
+				};
+
+				scope.beginEdit = function () {
+					isEditing = true;
+					
+					scope.editName = scope.node[displayProperty];
+				};
+
+				scope.endEdit = function (event) {
+					event.preventDefault();
+					event.stopPropagation();
+					isEditing = false;
+					
+					options.onEdit(scope.node, scope.editName);
+					controller.endEdit();
+				};
+
+				scope.cancelEdit = function (event) {
+					event.preventDefault();
+					event.stopPropagation();
+					isEditing = false;
+					controller.cancelEdit();
+				};
+
+				function render() {
+					var template =
+						'<a href="#" class="tree-item" ng-repeat="file in ' + attrs.treeViewNode + '.' + filesProperty + '" ng-click="selectFile(file, $event)" ng-class="{ selected: isSelected(file)' + (editable ? ', editing: isEditing()' : '') + ' }">' +
+							'<span class="tree-item-name"' + (editable ? ' ng-hide="isEditing()"' : '') + '><i ng-class="getFileIconClass(file)"></i> {{ file.' + displayProperty + ' }}</span>' +
+							(editable ?
+								'<span class="edit-pane" ng-show="isEditing()">' +
+									'<input type="text" class="input-large edit" ui-keyup="{ enter: \'endEdit($event)\', esc: \'cancelEdit($event)\' }" ng-model="editName" maxlength="60" />' +
+									'<span ng-click="endEdit($event)" title="Save"><i class="icon-ok green"></i></span>' +
+									'<span ng-click="cancelEdit($event)" title="Cancel"><i class="icon-remove red"></i></span>' +
+									'<span class="error-message red help-inline">{{ editErrorMessage }}</span>' +
+								'</span>'
+									: '') +
+						'</a>';
+
+					//Rendering template.
+					element.html('').append($compile(template)(scope));
+				}
+
+				render();
+			}
+		};
+	}]);
+	
 })(angular);
