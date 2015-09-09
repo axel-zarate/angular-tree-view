@@ -242,6 +242,7 @@
 .tree input.edit {
 	position: relative;
 	top: -2px;
+	border-radius: 0;
 }
 .tree .edit-pane {
 	margin-left: 4px;
@@ -272,8 +273,17 @@
 .blue {
 	color: #478fca !important;
 }
+.green {
+  color: #69aa46 !important;
+}
 .orange {
 	color: #ff892a !important;
+}
+.red {
+  color: #dd5a43 !important;
+}
+.light-orange {
+  color: #fcac6f !important;
 }
 
 ul.tree-actions {

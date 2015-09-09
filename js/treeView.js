@@ -19,9 +19,9 @@
 			template:
 				'<div class="tree-wrap">' +
 					'<ul class="inline tree-actions" ng-show="showActions">' +
-						'<li><a href="#" ng-click="add($event)" ng-show="canAdd" ng-disabled="!isFolderSelected"><i class="icon-plus"></i></a></li>' +
-						'<li><a href="#" ng-click="remove($event)" ng-show="canRemove" ng-disabled="!hasSelection"><i class="icon-remove"></i></a></li>' +
-						'<li><a href="#" ng-click="edit($event)" ng-show="canEdit" ng-disabled="!hasSelection"><i class="icon-pencil"></i></a></li>' +
+						'<li><a title="Add" href="#" ng-click="add($event)" ng-show="canAdd" ng-disabled="!isFolderSelected"><i class="icon-plus"></i></a></li>' +
+						'<li><a title="Remove" href="#" ng-click="remove($event)" ng-show="canRemove" ng-disabled="!hasSelection"><i class="icon-trash red"></i></a></li>' +
+						'<li><a title="Edit" href="#" ng-click="edit($event)" ng-show="canEdit" ng-disabled="!hasSelection"><i class="icon-pencil light-orange"></i></a></li>' +
 					'</ul>' +
 					'<div class="tree">' +
 						'<div tree-view-node="treeView">' +
@@ -150,12 +150,6 @@
 					return 'icon-folder' + (scope.expanded && scope.hasChildren() ? '-open' : '');
 				};
 
-				scope.getFileIconClass = typeof options.mapIcon === 'function' 
-					? options.mapIcon
-					: function (file) {
-						return 'icon-file';
-					};
-
 				scope.hasChildren = function () {
 					var node = scope.node;
 					return Boolean(node && (node[foldersProperty] && node[foldersProperty].length) || (node[filesProperty] && node[filesProperty].length));
@@ -165,7 +159,8 @@
 					event.preventDefault();
 
 					if (isEditing) return;
-					
+					if (scope.isSelected()) return;
+
 					if (collapsible) {
 						toggleExpanded();
 					}
@@ -178,23 +173,9 @@
 					}
 					controller.selectFolder(scope, scope.node, breadcrumbs.reverse());
 				};
-
-				scope.selectFile = function (file, event) {
-					event.preventDefault();
-
-					if (isEditing) return;
-					
-					var breadcrumbs = [file[displayProperty]];
-					var nodeScope = scope;
-					while (nodeScope.node) {
-						breadcrumbs.push(nodeScope.node[displayProperty]);
-						nodeScope = nodeScope.$parent;
-					}
-					controller.selectFile(scope, file, breadcrumbs.reverse());
-				};
 				
-				scope.isSelected = function (node) {
-					return controller.isSelected(node);
+				scope.isSelected = function () {
+					return controller.isSelected(scope.node);
 				};
 
 				scope.beginEdit = function () {
@@ -226,7 +207,7 @@
 				function render() {
 					var template =
 						'<div class="tree-folder" ng-repeat="node in ' + attrs.treeViewNode + '.' + foldersProperty + '">' +
-							'<a href="#" class="tree-folder-header inline" ng-click="selectFolder($event)" ng-class="{ selected: isSelected(node)' + (editable ? ', editing: isEditing()' : '') + ' }">' +
+							'<a href="#" class="tree-folder-header inline" ng-click="selectFolder($event)" ng-class="{ selected: isSelected()' + (editable ? ', editing: isEditing()' : '') + ' }">' +
 								'<i class="icon-folder-close" ng-class="getFolderIconClass()"></i> ' +
 								'<span class="tree-folder-name"' + (editable ? ' ng-hide="isEditing()"' : '') + '>{{ node.' + displayProperty + ' }}</span> ' +
 								(editable ?
@@ -243,9 +224,8 @@
 								'</div>' +
 							'</div>' +
 						'</div>' +
-						'<a href="#" class="tree-item" ng-repeat="file in ' + attrs.treeViewNode + '.' + filesProperty + '" ng-click="selectFile(file, $event)" ng-class="{ selected: isSelected(file) }">' +
-							'<span class="tree-item-name"><i ng-class="getFileIconClass(file)"></i> {{ file.' + displayProperty + ' }}</span>' +
-						'</a>';
+						'<div class="tree-item" tree-view-file="file" ng-repeat="file in ' + attrs.treeViewNode + '.' + filesProperty + '">' +
+						'</div>';
 
 					//Rendering template.
 					element.html('').append($compile(template)(scope));
@@ -278,28 +258,29 @@
 						return 'icon-file';
 					};
 
-				scope.selectFile = function (file, event) {
+				scope.selectFile = function (event) {
 					event.preventDefault();
 
 					if (isEditing) return;
-					
-					var breadcrumbs = [file[displayProperty]];
-					var nodeScope = scope;
+					if (scope.isSelected()) return;
+
+					var breadcrumbs = [];
+					var nodeScope = scope.$parent;
 					while (nodeScope.node) {
 						breadcrumbs.push(nodeScope.node[displayProperty]);
 						nodeScope = nodeScope.$parent;
 					}
-					controller.selectFile(scope, file, breadcrumbs.reverse());
+					controller.selectFile(scope, scope.file, breadcrumbs.reverse());
 				};
 				
-				scope.isSelected = function (node) {
-					return controller.isSelected(node);
+				scope.isSelected = function () {
+					return controller.isSelected(scope.file);
 				};
 
 				scope.beginEdit = function () {
 					isEditing = true;
 					
-					scope.editName = scope.node[displayProperty];
+					scope.editName = scope.file[displayProperty];
 				};
 
 				scope.endEdit = function (event) {
@@ -307,7 +288,7 @@
 					event.stopPropagation();
 					isEditing = false;
 					
-					options.onEdit(scope.node, scope.editName);
+					options.onEdit(scope.file, scope.editName);
 					controller.endEdit();
 				};
 
@@ -320,7 +301,7 @@
 
 				function render() {
 					var template =
-						'<a href="#" class="tree-item" ng-repeat="file in ' + attrs.treeViewNode + '.' + filesProperty + '" ng-click="selectFile(file, $event)" ng-class="{ selected: isSelected(file)' + (editable ? ', editing: isEditing()' : '') + ' }">' +
+						'<a href="#" class="tree-item" ng-click="selectFile($event)" ng-class="{ selected: isSelected()' + (editable ? ', editing: isEditing()' : '') + ' }">' +
 							'<span class="tree-item-name"' + (editable ? ' ng-hide="isEditing()"' : '') + '><i ng-class="getFileIconClass(file)"></i> {{ file.' + displayProperty + ' }}</span>' +
 							(editable ?
 								'<span class="edit-pane" ng-show="isEditing()">' +
@@ -333,7 +314,8 @@
 						'</a>';
 
 					//Rendering template.
-					element.html('').append($compile(template)(scope));
+					var compiled = $compile(template)(scope);
+					element.replaceWith(compiled);
 				}
 
 				render();
