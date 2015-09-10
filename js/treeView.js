@@ -19,16 +19,16 @@
 			template:
 				'<div class="tree-wrap">' +
 					'<ul class="inline tree-actions" ng-show="showActions">' +
-						'<li><a title="Add" href="#" ng-click="add($event)" ng-show="canAdd" ng-disabled="!isFolderSelected"><i class="icon-plus"></i></a></li>' +
-						'<li><a title="Remove" href="#" ng-click="remove($event)" ng-show="canRemove" ng-disabled="!hasSelection"><i class="icon-trash red"></i></a></li>' +
-						'<li><a title="Edit" href="#" ng-click="edit($event)" ng-show="canEdit" ng-disabled="!hasSelection"><i class="icon-pencil light-orange"></i></a></li>' +
+						'<li><a title="Add" href="#" ng-click="add($event)" ng-show="canAdd" ng-disabled="!isFolderSelected"><i class="fa fa-plus icon-plus"></i></a></li>' +
+						'<li><a title="Edit" href="#" ng-click="edit($event)" ng-show="canEdit" ng-disabled="!hasSelection"><i class="fa fa-pencil icon-pencil light-orange"></i></a></li>' +
+						'<li class="remove"><a title="Remove" href="#" ng-click="remove($event)" ng-show="canRemove" ng-disabled="!hasSelection"><i class="fa fa-trash icon-trash red"></i></a></li>' +
 					'</ul>' +
 					'<div class="tree">' +
 						'<div tree-view-node="treeView">' +
 						'</div>' +
 					'</div>' +
 				'</div>',
-			controller: ['$scope', function ($scope) {
+			controller: ['$scope', '$q', function ($scope, $q) {
 				var self = this,
 					selectedScope,
 					selectedFolder,
@@ -86,8 +86,14 @@
 					$scope.showActions = true;
 				};
 
-				self.endEdit = function() {
-					self.cancelEdit();
+				self.endEdit = function(node, editName) {
+					$q.when(options.onEdit(node, editName), function (result) {
+						editingScope.acceptEdit();
+
+						self.cancelEdit();
+					}, function (error) {
+						editingScope.setEditError(error);
+					});
 				};
 				
 				$scope.add = function (event) {
@@ -147,7 +153,8 @@
 				};
 
 				scope.getFolderIconClass = function () {
-					return 'icon-folder' + (scope.expanded && scope.hasChildren() ? '-open' : '');
+					var suffix = scope.expanded && scope.hasChildren() ? '-open' : '';
+					return 'icon-folder' + suffix + ' folder' + suffix;
 				};
 
 				scope.hasChildren = function () {
@@ -159,11 +166,12 @@
 					event.preventDefault();
 
 					if (isEditing) return;
-					if (scope.isSelected()) return;
-
+					
 					if (collapsible) {
 						toggleExpanded();
 					}
+
+					if (scope.isSelected()) return;
 
 					var breadcrumbs = [];
 					var nodeScope = scope;
@@ -181,16 +189,15 @@
 				scope.beginEdit = function () {
 					isEditing = true;
 					
+					scope.editErrorMessage = '';
 					scope.editName = scope.node[displayProperty];
 				};
 
 				scope.endEdit = function (event) {
 					event.preventDefault();
 					event.stopPropagation();
-					isEditing = false;
 					
-					options.onEdit(scope.node, scope.editName);
-					controller.endEdit();
+					controller.endEdit(scope.node, scope.editName);
 				};
 
 				scope.cancelEdit = function (event) {
@@ -200,6 +207,14 @@
 					controller.cancelEdit();
 				};
 
+				scope.acceptEdit = function () {
+					isEditing = false;
+				};
+
+				scope.setEditError = function (message) {
+					scope.editErrorMessage = message;
+				};
+
 				function toggleExpanded() {
 					scope.expanded = !scope.expanded;
 				}
@@ -207,8 +222,8 @@
 				function render() {
 					var template =
 						'<div class="tree-folder" ng-repeat="node in ' + attrs.treeViewNode + '.' + foldersProperty + '">' +
-							'<a href="#" class="tree-folder-header inline" ng-click="selectFolder($event)" ng-class="{ selected: isSelected()' + (editable ? ', editing: isEditing()' : '') + ' }">' +
-								'<i class="icon-folder-close" ng-class="getFolderIconClass()"></i> ' +
+							'<a href="#" class="tree-folder-header inline" ng-click="selectFolder($event)" ng-class="{ selected: isSelected() }">' +
+								'<i class="fa fa-folder icon-folder-close" ng-class="getFolderIconClass()"></i> ' +
 								'<span class="tree-folder-name"' + (editable ? ' ng-hide="isEditing()"' : '') + '>{{ node.' + displayProperty + ' }}</span> ' +
 								(editable ?
 								'<span class="edit-pane" ng-show="isEditing()">' +
@@ -224,7 +239,7 @@
 								'</div>' +
 							'</div>' +
 						'</div>' +
-						'<div class="tree-item" tree-view-file="file" ng-repeat="file in ' + attrs.treeViewNode + '.' + filesProperty + '">' +
+						'<a href="#" class="tree-item" tree-view-file="file" ng-repeat="file in ' + attrs.treeViewNode + '.' + filesProperty + '">' +
 						'</div>';
 
 					//Rendering template.
@@ -240,6 +255,7 @@
 		return {
 			restrict: 'A',
 			require: '^treeView',
+			terminal: true,
 			link: function (scope, element, attrs, controller) {
 				var options = controller.getOptions(),
 					filesProperty = options.filesProperty,
@@ -255,7 +271,7 @@
 				scope.getFileIconClass = typeof options.mapIcon === 'function' 
 					? options.mapIcon
 					: function (file) {
-						return 'icon-file';
+						return 'fa-file icon-file';
 					};
 
 				scope.selectFile = function (event) {
@@ -280,16 +296,15 @@
 				scope.beginEdit = function () {
 					isEditing = true;
 					
+					scope.editErrorMessage = '';
 					scope.editName = scope.file[displayProperty];
 				};
 
 				scope.endEdit = function (event) {
 					event.preventDefault();
 					event.stopPropagation();
-					isEditing = false;
 					
-					options.onEdit(scope.file, scope.editName);
-					controller.endEdit();
+					controller.endEdit(scope.file, scope.editName);
 				};
 
 				scope.cancelEdit = function (event) {
@@ -298,11 +313,23 @@
 					isEditing = false;
 					controller.cancelEdit();
 				};
+				
+				scope.acceptEdit = function () {
+					isEditing = false;
+				};
+
+				scope.setEditError = function (message) {
+					scope.editErrorMessage = message;
+				};
+				
+				scope.$watch(scope.isSelected, function (isSelected) {
+					element[isSelected ? 'addClass' : 'removeClass']('selected');
+				});
 
 				function render() {
 					var template =
-						'<a href="#" class="tree-item" ng-click="selectFile($event)" ng-class="{ selected: isSelected()' + (editable ? ', editing: isEditing()' : '') + ' }">' +
-							'<span class="tree-item-name"' + (editable ? ' ng-hide="isEditing()"' : '') + '><i ng-class="getFileIconClass(file)"></i> {{ file.' + displayProperty + ' }}</span>' +
+						//'<a href="#" class="tree-item" ng-click="selectFile($event)" ng-class="{ selected: isSelected()' + (editable ? ', editing: isEditing()' : '') + ' }">' +
+							'<span class="tree-item-name"' + (editable ? ' ng-hide="isEditing()"' : '') + '><i class="fa" ng-class="getFileIconClass(file)"></i> {{ file.' + displayProperty + ' }}</span>' +
 							(editable ?
 								'<span class="edit-pane" ng-show="isEditing()">' +
 									'<input type="text" class="input-large edit" ui-keyup="{ enter: \'endEdit($event)\', esc: \'cancelEdit($event)\' }" ng-model="editName" maxlength="60" />' +
@@ -310,12 +337,19 @@
 									'<span ng-click="cancelEdit($event)" title="Cancel"><i class="icon-remove red"></i></span>' +
 									'<span class="error-message red help-inline">{{ editErrorMessage }}</span>' +
 								'</span>'
-									: '') +
-						'</a>';
+									: '') ;
+									//+
+						//'</a>';
 
 					//Rendering template.
-					var compiled = $compile(template)(scope);
-					element.replaceWith(compiled);
+					// var compiled = $compile(template)(scope);
+					// element.replaceWith(compiled);
+					element.html('').append($compile(template)(scope));
+					element.bind('click', function (event) {
+						scope.$apply(function () {
+							scope.selectFile(event);
+						});
+					});
 				}
 
 				render();

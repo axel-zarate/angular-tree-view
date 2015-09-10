@@ -7,14 +7,18 @@
 		<meta name="description" content="overview &amp; stats" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.min.css" />
-		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css" />
+		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" />
 		<!--[if IE 7]>
 		  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome-ie7.min.css" />
 		<![endif]-->
 		
 		<link rel="stylesheet" href="css/style.css" />
-
+		<style>
+			body {
+				margin-bottom: 50px;
+			}
+		</style>
 	</head>
 
 	<body ng-app="Demo">
@@ -24,8 +28,8 @@
 			<div class="row">
 				<div class="span6">
 					<div style="padding: 10px; border: 1px solid #aaa;">
-						<ul class="breadcrumb">
-							<li ng-repeat="b in breadcrums" ng-class="{ active: $last }">{{ b }} <span class="divider" ng-show="!$last">/</span></li>
+						<ul class="breadcrumb" style="min-height: 20px; box-sizing: content-box">
+							<li ng-repeat="b in breadcrumbs" ng-class="{ active: $last }">{{ b }}</li>
 						</ul>
 						<div>Root</div>
 						<div tree-view="structure" tree-view-options="options"></div>
@@ -37,7 +41,10 @@
 			<div class="row">
 				<div class="span6">
 					<div style="padding: 10px; border: 1px solid #aaa;">
-						<div>Root</div>
+						<div style="padding: 1px 5px">
+							<i class="fa fa-tablet icon-tablet"></i>
+							Device
+						</div>
 						<div tree-view="structure" tree-view-options="options2"></div>
 					</div>
 				</div>
@@ -47,7 +54,10 @@
 			<div class="row">
 				<div class="span6">
 					<div style="padding: 10px; border: 1px solid #aaa;">
-						<div>Root</div>
+						<div style="padding: 1px 4px">
+							<i class="fa fa-hdd icon-hdd"></i>
+							Hard Drive
+						</div>
 						<div tree-view="structure" tree-view-options="options3"></div>
 					</div>
 				</div>
@@ -67,9 +77,9 @@
 			(function () {
 				var app = angular.module('Demo', ['AxelSoft']);
 				
-				app.controller('DemoController', ['$scope', function ($scope) {
+				app.controller('DemoController', ['$scope', '$q', function ($scope, $q) {
 					
-					$scope.breadcrums = [''];
+					$scope.breadcrumbs = [];
 					
 					$scope.structure = { folders: [
 						{ name: 'Folder 1', files: [{ name: 'File 1.jpg' }, { name: 'File 2.png' }], folders: [
@@ -81,14 +91,18 @@
 					], files: [{ name: 'File 1.gif' }, { name: 'File 2.gif' }]};
 					
 					$scope.options = {
-						onNodeSelect: function (node, breadcrums) {
-							$scope.breadcrums = breadcrums;
+						onNodeSelect: function (node, breadcrumbs) {
+							$scope.breadcrumbs = breadcrumbs;
 						},
 						onAdd: function (parent) {
-							debugger;
+							if (!parent.files) parent.files = [];
+							var newFile = { name: 'File ' + parent.files.length };
+							parent.files.push(newFile);
 						},
 						onEdit: function (node, name) {
-							debugger;
+							node.name = name;
+							return true;
+							return $q.reject("Can't set this name");
 						},
 						onRemove: function (node) {
 							debugger;
@@ -100,10 +114,10 @@
 					};
 					
 					var iconClassMap = {
-						txt: 'icon-file-text',
-						jpg: 'icon-picture blue',
-						png: 'icon-picture orange',
-						gif: 'icon-picture'
+						txt: 'fa-file-text-o icon-file-text',
+						jpg: 'fa-file-picture-o icon-picture blue',
+						png: 'fa-file-picture-o icon-picture orange',
+						gif: 'fa-file-picture-o icon-picture'
 					},
 						defaultIconClass = 'icon-file';
 					
