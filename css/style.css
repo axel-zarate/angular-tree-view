@@ -219,12 +219,12 @@
 	top: -2px;
 }
 .tree input {
-	padding: 1px 6px;
+	padding: 0px 3px;
 	margin: 0;
 }
 .tree input.edit {
 	position: relative;
-	top: -2px;
+	margin-top: -2px;
 	border-radius: 0;
 }
 .tree .edit-pane {
@@ -309,4 +309,7 @@ ul.tree-actions > li.remove {
 	margin-left: 5px;
 	padding-left: 10px;
 	border-color: #ddd;
+}
+.edit-pane > .help-inline {
+	margin-left: 5px;
 }

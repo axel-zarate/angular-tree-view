@@ -55,7 +55,7 @@
 				<div class="span6">
 					<div style="padding: 10px; border: 1px solid #aaa;">
 						<div style="padding: 1px 4px">
-							<i class="fa fa-hdd icon-hdd"></i>
+							<i class="fa fa-hdd-o icon-hdd"></i>
 							Hard Drive
 						</div>
 						<div tree-view="structure" tree-view-options="options3"></div>
@@ -90,6 +90,7 @@
 						{ name: 'Folder 2' }
 					], files: [{ name: 'File 1.gif' }, { name: 'File 2.gif' }]};
 					
+					var validName = /^(?=.*\w)[\w\.\s-]+$/;
 					$scope.options = {
 						onNodeSelect: function (node, breadcrumbs) {
 							$scope.breadcrumbs = breadcrumbs;
@@ -99,15 +100,33 @@
 							var newFile = { name: 'File ' + parent.files.length };
 							parent.files.push(newFile);
 						},
-						onEdit: function (node, name) {
+						onEdit: function (node, name, parent) {
+							if (!validName.test(name)) {
+								return $q.reject("Invalid name");
+							}
+							if (hasName(parent.folders, node, name) || hasName(parent.files, node, name)) {
+								return $q.reject("Name is duplicate");
+							}
+							
+							// Accept change
 							node.name = name;
 							return true;
-							return $q.reject("Can't set this name");
 						},
-						onRemove: function (node) {
+						onRemove: function (node, parent) {
 							debugger;
 						}
 					};
+					
+					function hasName(nodes, self, name) {
+						if (nodes) {
+							for (var i = 0; i < nodes.length; i++) {
+								if (nodes[i] !== self && nodes[i].name === name) {
+									return true;
+								}
+							}
+						}
+						return false;
+					}
 					
 					$scope.options2 = {
 						collapsible: false

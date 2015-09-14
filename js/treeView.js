@@ -86,8 +86,8 @@
 					$scope.showActions = true;
 				};
 
-				self.endEdit = function(node, editName) {
-					$q.when(options.onEdit(node, editName), function (result) {
+				self.endEdit = function(node, editName, parent) {
+					$q.when(options.onEdit(node, editName, parent), function (result) {
 						editingScope.acceptEdit();
 
 						self.cancelEdit();
@@ -109,7 +109,8 @@
 
 					if (!$scope.hasSelection) return;
 
-					options.onRemove(selectedFile || selectedFolder);
+					var selected = selectedFile || selectedFolder;
+					options.onRemove(selected, selectedScope.$parent.node || $scope.treeView);
 				};
 
 				$scope.edit = function (event) {
@@ -131,7 +132,7 @@
 		};
 	}]);
 
-	module.directive('treeViewNode', ['$compile', function ($compile) {
+	module.directive('treeViewNode', ['$compile', '$timeout', function ($compile, $timeout) {
 		return {
 			restrict: 'A',
 			require: '^treeView',
@@ -144,7 +145,8 @@
 					collapsible = options.collapsible,
 					editable = controller.isEditable();
 
-				var isEditing = false;
+				var isEditing = false,
+					selectedFolder;
 
 				scope.expanded = collapsible == false;
 
@@ -173,6 +175,7 @@
 
 					if (scope.isSelected()) return;
 
+					selectedFolder = event.currentTarget;
 					var breadcrumbs = [];
 					var nodeScope = scope;
 					while (nodeScope.node) {
@@ -191,13 +194,17 @@
 					
 					scope.editErrorMessage = '';
 					scope.editName = scope.node[displayProperty];
+					
+					$timeout(function () {
+						angular.element(selectedFolder).find('input.edit').focus();
+					}, 50);
 				};
 
 				scope.endEdit = function (event) {
 					event.preventDefault();
 					event.stopPropagation();
 					
-					controller.endEdit(scope.node, scope.editName);
+					controller.endEdit(scope.node, scope.editName, scope.$parent.node || scope.$parent.treeView);
 				};
 
 				scope.cancelEdit = function (event) {
@@ -228,9 +235,9 @@
 								(editable ?
 								'<span class="edit-pane" ng-show="isEditing()">' +
 									'<input type="text" class="input-large edit" ui-keyup="{ enter: \'endEdit($event)\', esc: \'cancelEdit($event)\' }" ng-model="editName" maxlength="60" />' +
-									'<span ng-click="endEdit($event)" title="Save"><i class="icon-ok green"></i></span>' +
-									'<span ng-click="cancelEdit($event)" title="Cancel"><i class="icon-remove red"></i></span>' +
-									'<span class="error-message red help-inline">{{ editErrorMessage }}</span>' +
+									'<span ng-click="endEdit($event)" title="Save"><i class="fa fa-check icon-ok green"></i></span>' +
+									'<span ng-click="cancelEdit($event)" title="Cancel"><i class="fa fa-remove icon-remove red"></i></span>' +
+									'<span class="red help-inline">{{ editErrorMessage }}</span>' +
 								'</span>'
 									: '') +
 							'</a>' +
@@ -251,7 +258,7 @@
 		};
 	}]);
 
-	module.directive('treeViewFile', ['$compile', function ($compile) {
+	module.directive('treeViewFile', ['$compile', '$timeout', function ($compile, $timeout) {
 		return {
 			restrict: 'A',
 			require: '^treeView',
@@ -298,13 +305,17 @@
 					
 					scope.editErrorMessage = '';
 					scope.editName = scope.file[displayProperty];
+					
+					$timeout(function () {
+						element.find('input.edit').focus();
+					}, 50);
 				};
 
 				scope.endEdit = function (event) {
 					event.preventDefault();
 					event.stopPropagation();
 					
-					controller.endEdit(scope.file, scope.editName);
+					controller.endEdit(scope.file, scope.editName, scope.$parent.node || scope.$parent.treeView);
 				};
 
 				scope.cancelEdit = function (event) {
@@ -333,9 +344,9 @@
 							(editable ?
 								'<span class="edit-pane" ng-show="isEditing()">' +
 									'<input type="text" class="input-large edit" ui-keyup="{ enter: \'endEdit($event)\', esc: \'cancelEdit($event)\' }" ng-model="editName" maxlength="60" />' +
-									'<span ng-click="endEdit($event)" title="Save"><i class="icon-ok green"></i></span>' +
-									'<span ng-click="cancelEdit($event)" title="Cancel"><i class="icon-remove red"></i></span>' +
-									'<span class="error-message red help-inline">{{ editErrorMessage }}</span>' +
+									'<span ng-click="endEdit($event)" title="Save"><i class="fa fa-check icon-ok green"></i></span>' +
+									'<span ng-click="cancelEdit($event)" title="Cancel"><i class="fa fa-remove icon-remove red"></i></span>' +
+									'<span class="red help-inline">{{ editErrorMessage }}</span>' +
 								'</span>'
 									: '') ;
 									//+
