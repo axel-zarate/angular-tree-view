@@ -12,7 +12,7 @@
 		<!--[if IE 7]>
 		  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome-ie7.min.css" />
 		<![endif]-->
-		
+
 		<link rel="stylesheet" href="css/style.css" />
 		<style>
 			body {
@@ -36,7 +36,7 @@
 					</div>
 				</div>
 			</div>
-			
+
 			<h2>Non-collapsible (expanded)</h2>
 			<div class="row">
 				<div class="span6">
@@ -49,7 +49,7 @@
 					</div>
 				</div>
 			</div>
-			
+
 			<h2>Custom file icons</h2>
 			<div class="row">
 				<div class="span6">
@@ -63,7 +63,7 @@
 				</div>
 			</div>
 		</div>
-		
+
 		<!--[if !IE]> -->
 		<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
 		<!-- <![endif]-->
@@ -76,11 +76,11 @@
 		<script>
 			(function () {
 				var app = angular.module('Demo', ['AxelSoft']);
-				
+
 				app.controller('DemoController', ['$scope', '$q', function ($scope, $q) {
-					
+
 					$scope.breadcrumbs = [];
-					
+
 					$scope.structure = { folders: [
 						{ name: 'Folder 1', files: [{ name: 'File 1.jpg' }, { name: 'File 2.png' }], folders: [
 							{ name: 'Subfolder 1', files: [{ name: 'Subfile 1.txt' }] },
@@ -89,7 +89,7 @@
 						]},
 						{ name: 'Folder 2' }
 					], files: [{ name: 'File 1.gif' }, { name: 'File 2.gif' }]};
-					
+
 					var validName = /^(?=.*\w)[\w\.\s-]+$/;
 					$scope.options = {
 						onNodeSelect: function (node, breadcrumbs) {
@@ -107,16 +107,33 @@
 							if (hasName(parent.folders, node, name) || hasName(parent.files, node, name)) {
 								return $q.reject("Name is duplicate");
 							}
-							
+
 							// Accept change
 							node.name = name;
 							return true;
 						},
 						onRemove: function (node, parent) {
-							debugger;
+							if (!confirm('Do you want to remove "' + node.name + '"?')) return false;
+
+							// find node in parent's folders or files arrays
+							if (parent.folders)
+							for (var i = 0; i < parent.folders.length; i++) {
+								if (parent.folders[i] === node) {
+									parent.folders.splice(i, 1);
+									return true;
+								}
+							}
+							if (parent.files)
+							for (var i = 0; i < parent.files.length; i++) {
+								if (parent.files[i] === node) {
+									parent.files.splice(i, 1);
+									return true;
+								}
+							}
+							return false;
 						}
 					};
-					
+
 					function hasName(nodes, self, name) {
 						if (nodes) {
 							for (var i = 0; i < nodes.length; i++) {
@@ -127,11 +144,11 @@
 						}
 						return false;
 					}
-					
+
 					$scope.options2 = {
 						collapsible: false
 					};
-					
+
 					var iconClassMap = {
 						txt: 'fa-file-text-o icon-file-text',
 						jpg: 'fa-file-picture-o icon-picture blue',
@@ -139,18 +156,18 @@
 						gif: 'fa-file-picture-o icon-picture'
 					},
 						defaultIconClass = 'icon-file';
-					
+
 					$scope.options3 = {
 						mapIcon: function (file) {
 							var pattern = /\.(\w+)$/,
 								match = pattern.exec(file.name),
 								ext = match && match[1];
-							
+
 							return iconClassMap[ext] || defaultIconClass;
 						}
 					};
 				}]);
-				
+
 			})();
 		</script>
 	</body>

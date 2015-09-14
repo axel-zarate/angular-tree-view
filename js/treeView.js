@@ -7,7 +7,7 @@
 		displayProperty: 'name',
 		collapsible: true
 	});
-	
+
 	module.directive('treeView', ['treeViewDefaults', function (treeViewDefaults) {
 		return {
 			restrict: 'A',
@@ -39,7 +39,7 @@
 
 				self.selectFolder = function (scope, node, breadcrumbs) {
 					if (editingScope) return;
-					
+
 					if (selectedFile) {
 						selectedFile = undefined;
 					}
@@ -55,7 +55,7 @@
 
 				self.selectFile = function (scope, file, breadcrumbs) {
 					if (editingScope) return;
-					
+
 					if (selectedFolder) {
 						selectedFolder = undefined;
 					}
@@ -68,7 +68,7 @@
 						options.onNodeSelect(file, breadcrumbs);
 					}
 				};
-				
+
 				self.isSelected = function (node) {
 					return node === selectedFolder || node === selectedFile;
 				};
@@ -88,6 +88,8 @@
 
 				self.endEdit = function(node, editName, parent) {
 					$q.when(options.onEdit(node, editName, parent), function (result) {
+						if (result === false) return;
+
 						editingScope.acceptEdit();
 
 						self.cancelEdit();
@@ -95,12 +97,12 @@
 						editingScope.setEditError(error);
 					});
 				};
-				
+
 				$scope.add = function (event) {
 					event.preventDefault();
 
 					if (!$scope.isFolderSelected) return;
-					
+
 					options.onAdd(selectedFolder);
 				};
 
@@ -110,7 +112,14 @@
 					if (!$scope.hasSelection) return;
 
 					var selected = selectedFile || selectedFolder;
-					options.onRemove(selected, selectedScope.$parent.node || $scope.treeView);
+					$q.when(options.onRemove(selected, selectedScope.$parent.node || $scope.treeView), function (result) {
+						if (result === false) return;
+						selectedScope = undefined;
+						selectedFolder = undefined;
+						selectedFile = undefined;
+						$scope.hasSelection = false;
+						$scope.isFolderSelected = false;
+					});
 				};
 
 				$scope.edit = function (event) {
@@ -168,7 +177,7 @@
 					event.preventDefault();
 
 					if (isEditing) return;
-					
+
 					if (collapsible) {
 						toggleExpanded();
 					}
@@ -184,17 +193,17 @@
 					}
 					controller.selectFolder(scope, scope.node, breadcrumbs.reverse());
 				};
-				
+
 				scope.isSelected = function () {
 					return controller.isSelected(scope.node);
 				};
 
 				scope.beginEdit = function () {
 					isEditing = true;
-					
+
 					scope.editErrorMessage = '';
 					scope.editName = scope.node[displayProperty];
-					
+
 					$timeout(function () {
 						angular.element(selectedFolder).find('input.edit').focus();
 					}, 50);
@@ -203,7 +212,7 @@
 				scope.endEdit = function (event) {
 					event.preventDefault();
 					event.stopPropagation();
-					
+
 					controller.endEdit(scope.node, scope.editName, scope.$parent.node || scope.$parent.treeView);
 				};
 
@@ -295,17 +304,17 @@
 					}
 					controller.selectFile(scope, scope.file, breadcrumbs.reverse());
 				};
-				
+
 				scope.isSelected = function () {
 					return controller.isSelected(scope.file);
 				};
 
 				scope.beginEdit = function () {
 					isEditing = true;
-					
+
 					scope.editErrorMessage = '';
 					scope.editName = scope.file[displayProperty];
-					
+
 					$timeout(function () {
 						element.find('input.edit').focus();
 					}, 50);
@@ -314,7 +323,7 @@
 				scope.endEdit = function (event) {
 					event.preventDefault();
 					event.stopPropagation();
-					
+
 					controller.endEdit(scope.file, scope.editName, scope.$parent.node || scope.$parent.treeView);
 				};
 
@@ -324,7 +333,7 @@
 					isEditing = false;
 					controller.cancelEdit();
 				};
-				
+
 				scope.acceptEdit = function () {
 					isEditing = false;
 				};
@@ -332,7 +341,7 @@
 				scope.setEditError = function (message) {
 					scope.editErrorMessage = message;
 				};
-				
+
 				scope.$watch(scope.isSelected, function (isSelected) {
 					element[isSelected ? 'addClass' : 'removeClass']('selected');
 				});
@@ -367,5 +376,5 @@
 			}
 		};
 	}]);
-	
+
 })(angular);
