@@ -77,8 +77,10 @@
 			(function () {
 				var app = angular.module('Demo', ['AxelSoft']);
 
-				app.controller('DemoController', ['$scope', '$q', function ($scope, $q) {
+				app.controller('DemoController', ['$scope', '$q', '$http', function ($scope, $q, $http) {
 
+					// Just a test endpoint to make fake HTTP requests
+					var url = 'http://httpbin.org/';
 					$scope.breadcrumbs = [];
 
 					$scope.structure = { folders: [
@@ -97,40 +99,72 @@
 						},
 						onAdd: function (parent) {
 							if (!parent.files) parent.files = [];
-							var newFile = { name: 'File ' + parent.files.length };
-							parent.files.push(newFile);
+							// Ideally you would ask the user for a filename
+							var newFile = { name: 'File ' + (parent.files.length + 1) };
+
+							return $http.post(url + 'post', {
+								// Send whatever data the server needs
+								data: { parent: parent, newNode: newFile }
+							}).then(function (response) {
+								// Server call succeded
+								// Insert new file
+								parent.files.push(newFile);
+								return true;
+							}, function (error) {
+								return false;
+							});
 						},
 						onEdit: function (node, name, parent) {
-							if (!validName.test(name)) {
+							// Perform some basic validation
+							if (!(name && validName.test(name))) {
 								return $q.reject("Invalid name");
 							}
+
+							// Check that no sibling node has the same name
 							if (hasName(parent.folders, node, name) || hasName(parent.files, node, name)) {
 								return $q.reject("Name is duplicate");
 							}
 
-							// Accept change
-							node.name = name;
-							return true;
+							return $http.put(url + 'put', {
+								// Send whatever data the server needs
+								data: { node: node, name: name }
+							}).then(function (response) {
+								// Server call succeded
+								// Accept model change
+								node.name = name;
+								return true;
+							}, function (error) {
+								return false;
+							});
 						},
 						onRemove: function (node, parent) {
 							if (!confirm('Do you want to remove "' + node.name + '"?')) return false;
 
-							// find node in parent's folders or files arrays
-							if (parent.folders)
-							for (var i = 0; i < parent.folders.length; i++) {
-								if (parent.folders[i] === node) {
-									parent.folders.splice(i, 1);
-									return true;
+							return $http['delete'](url + 'delete', {
+								// Send whatever data the server needs
+								data: node
+							}).then(function (response) {
+								// Server call succeded
+								// find node in parent's folders or files arrays
+								// If your model has a property to differentiate between files and folders
+								if (parent.folders)
+								for (var i = 0; i < parent.folders.length; i++) {
+									if (parent.folders[i] === node) {
+										parent.folders.splice(i, 1);
+										return true;
+									}
 								}
-							}
-							if (parent.files)
-							for (var i = 0; i < parent.files.length; i++) {
-								if (parent.files[i] === node) {
-									parent.files.splice(i, 1);
-									return true;
+								if (parent.files)
+								for (var i = 0; i < parent.files.length; i++) {
+									if (parent.files[i] === node) {
+										parent.files.splice(i, 1);
+										return true;
+									}
 								}
-							}
-							return false;
+								return false;
+							}, function (error) {
+								return false;
+							});
 						}
 					};
 

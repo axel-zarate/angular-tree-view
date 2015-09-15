@@ -237,7 +237,7 @@
 
 				function render() {
 					var template =
-						'<div class="tree-folder" ng-repeat="node in ' + attrs.treeViewNode + '.' + foldersProperty + '">' +
+						'<div class="tree-folder" ng-repeat="node in ' + attrs.treeViewNode + '.' + foldersProperty + ' | orderBy: \'' + displayProperty + '\'">' +
 							'<a href="#" class="tree-folder-header inline" ng-click="selectFolder($event)" ng-class="{ selected: isSelected() }">' +
 								'<i class="fa fa-folder icon-folder-close" ng-class="getFolderIconClass()"></i> ' +
 								'<span class="tree-folder-name"' + (editable ? ' ng-hide="isEditing()"' : '') + '>{{ node.' + displayProperty + ' }}</span> ' +
@@ -255,7 +255,7 @@
 								'</div>' +
 							'</div>' +
 						'</div>' +
-						'<a href="#" class="tree-item" tree-view-file="file" ng-repeat="file in ' + attrs.treeViewNode + '.' + filesProperty + '">' +
+						'<a href="#" class="tree-item" tree-view-file="file" ng-repeat="file in ' + attrs.treeViewNode + '.' + filesProperty + ' | orderBy: \'' + displayProperty + '\'">' +
 						'</div>';
 
 					//Rendering template.
